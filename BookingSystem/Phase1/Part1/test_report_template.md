@@ -1,5 +1,8 @@
 # 1️⃣ Introduction
 
+**Tester(s):**  
+- Name:  
+
 **Purpose:**  
 - Describe the purpose of this test (e.g., identify vulnerabilities in registration and authentication flows).
 
@@ -24,20 +27,24 @@
 
 **Overall risk level:** (Low / Medium / High / Critical)
 
-**Top 3 immediate actions:**  
+**Top 5 immediate actions:**  
 1.  
 2.  
-3.
+3.  
+4.  
+5.  
 
 ---
 
 # 3️⃣ Severity scale & definitions
 
-- **Critical** — Leads to full system compromise or data breach. *Immediate fix required.*  
-- **High** — Exposes sensitive data or enables privilege escalation. *Fix ASAP.*  
-- **Medium** — Requires specific conditions or user action. *Fix soon.*  
-- **Low** — Minor issue or misconfiguration. *Monitor and fix in maintenance.*  
-- **Informational** — No direct risk, but useful for hardening. *For awareness.*
+|  **Severity Level**  | **Description**                                                                                                              | **Recommended Action**           |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+|      🔴 **High**     | A serious vulnerability that can lead to full system compromise or data breach (e.g., SQL Injection, Remote Code Execution). | *Immediate fix required*         |
+|     🟠 **Medium**    | A significant issue that may require specific conditions or user interaction (e.g., XSS, CSRF).                              | *Fix ASAP*                       |
+|      🟡 **Low**      | A minor issue or configuration weakness (e.g., server version disclosure).                                                   | *Fix soon*                       |
+| 🔵 **Info** | No direct risk, but useful for system hardening (e.g., missing security headers).                                            | *Monitor and fix in maintenance* |
+
 
 ---
 
@@ -47,13 +54,15 @@
 
 | ID | Severity | Finding | Description | Evidence / Proof |
 |------|-----------|----------|--------------|------------------|
-| F-01 | 🔴 Critical | SQL Injection in registration | Input field allows `' OR '1'='1` injection | Screenshot or sqlmap result |
-| F-02 | 🟠 High | Session fixation | Session ID remains unchanged after login | Burp log or response headers |
-| F-03 | 🟡 Medium | Weak password policy | Accepts passwords like "12345" | Screenshot of registration success |
+| F-01 | 🔴 High | SQL Injection in registration | Input field allows `' OR '1'='1` injection | Screenshot or sqlmap result |
+| F-02 | 🟠 Medium | Session fixation | Session ID remains unchanged after login | Burp log or response headers |
+| F-03 | 🟡 Low | Weak password policy | Accepts passwords like "12345" | Screenshot of registration success |
 
-✅ **Tips:**  
-- Include up to 5 findings total.   
-- Keep each description short and clear.
+---
+
+> [!NOTE]
+> Include up to 5 findings total.   
+> Keep each description short and clear.
 
 ---
 
@@ -62,7 +71,9 @@
 **Purpose:**  
 - Attach or link your OWASP ZAP scan results (Markdown format preferred).
 
-**Instructions:**
+---
+
+**Instructions (CMD version):**
 1. Run OWASP ZAP baseline scan:  
    ```bash
    zap-baseline.py -t https://example.com -r zap_report_round1.html -J zap_report.json
@@ -73,26 +84,8 @@
    ```
 3. Save the report as `zap_report_round1.md` and link it below.
 
-### ZAP Summary Table
-
-| Risk Level | Alerts | Example Finding | URL |
-|-------------|---------|-----------------|-----|
-| 🔴 High |   |   |   |
-| 🟠 Medium |   |   |   |
-| 🟡 Low |   |   |   |
-| ⚪ Info |   |   |   |
-
-📁 **Attach full report:** `[View ZAP report](zap_report_round1.md)`
+---
+> [!NOTE]
+> 📁 **Attach full report:** → `check itslearning` → **Add a link here**
 
 ---
-
-# 6️⃣ Sign-off
-
-**Tester(s):**  
-- Name:  
-- Signature / approval:  
-
-**Acceptance criteria for closure:**  
-- All Critical & High issues verified.  
-- Regression tests added.  
-- Privacy policy updated.
