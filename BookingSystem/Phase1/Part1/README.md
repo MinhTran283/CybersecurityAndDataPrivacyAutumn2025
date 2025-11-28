@@ -264,7 +264,7 @@ sudo docker compose down -v
 
 ```bash
 # Stop and remove images (fresh start)
-sudo docker compose down --rmi
+sudo docker compose down --rmi all
 ```
 
 **11. Quick troubleshooting**
