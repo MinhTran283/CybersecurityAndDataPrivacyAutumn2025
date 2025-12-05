@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>JWT Demo – Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-100 flex items-center justify-center">
+  <main class="w-full max-w-xl bg-white shadow-md rounded-lg p-6 space-y-6">
+    <h1 class="text-2xl font-bold text-center mb-2">JWT Demo</h1>
+
+    <!-- Login form -->
+    <section class="space-y-4">
+      <h2 class="font-semibold text-lg">Login</h2>
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1" for="username">Username</label>
+          <input
+            id="username"
+            type="text"
+            class="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-500"
+            placeholder="alice or admin"
+            required
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" for="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            class="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-500"
+            placeholder="alice123 or admin123"
+            required
+          />
+        </div>
+        <div class="flex justify-between space-x-4 mt-4">
+          <button
+            type="submit"
+            class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-1/2"
+          >
+            Login
+          </button>
+
+          <button
+            type="button"
+            id="logoutBtn"
+            class="bg-gray-500 text-white px-3 py-2 rounded hover:bg-gray-600 w-1/2"
+          >
+            Logout
+          </button>
+        </div>
+      </form>
+
+      <p id="status" class="text-sm text-red-600"></p>
+
+      <div class="mt-2 text-sm text-gray-700">
+        <p><strong>Demo users:</strong></p>
+        <ul class="list-disc list-inside">
+          <li>alice / alice123 (role: user)</li>
+          <li>admin / admin123 (role: admin)</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Link to protected page -->
+    <section class="border-t pt-4 space-y-2">
+      <h2 class="font-semibold text-lg">Protected pages</h2>
+      <p class="text-sm text-gray-700">
+        <a href="/users.html" class="text-blue-600 hover:underline">users.html</a> –
+        accessible for <code>user</code> and <code>admin</code> roles.
+      </p>
+      <p class="text-sm text-gray-700">
+        <a href="/admin.html" class="text-blue-600 hover:underline">admin.html</a> –
+        accessible only for <code>admin</code> role.
+      </p>
+    </section>
+
+    <!-- JWT token + decoded payload -->
+    <section class="border-t pt-4 space-y-3">
+      <h2 class="font-semibold text-lg">JWT token</h2>
+      <div>
+        <label class="block text-sm font-medium mb-1" for="tokenBox">Raw token</label>
+        <textarea
+          id="tokenBox"
+          class="w-full border rounded px-3 py-2 text-xs font-mono h-20 bg-gray-50"
+          readonly
+        ></textarea>
+      </div>
+      <div>
+        <h3 class="text-sm font-medium mb-1">Decoded payload</h3>
+        <pre
+          id="payloadBox"
+          class="w-full border rounded px-3 py-2 text-xs font-mono bg-gray-50 overflow-x-auto"
+        ></pre>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const TOKEN_KEY = "jwtToken";
+
+    const loginForm = document.getElementById("loginForm");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const statusEl = document.getElementById("status");
+    const tokenBox = document.getElementById("tokenBox");
+    const payloadBox = document.getElementById("payloadBox");
+
+    function getToken() {
+      return localStorage.getItem(TOKEN_KEY);
+    }
+
+    function setToken(token) {
+      if (token) {
+        localStorage.setItem(TOKEN_KEY, token);
+      } else {
+        localStorage.removeItem(TOKEN_KEY);
+      }
+      renderToken();
+    }
+
+    function decodePayload(token) {
+      if (!token) return null;
+      const parts = token.split(".");
+      if (parts.length !== 3) return null;
+
+      let payload = parts[1];
+
+      // base64url -> base64
+      payload = payload.replace(/-/g, "+").replace(/_/g, "/");
+
+      try {
+        const json = atob(payload);
+        return JSON.parse(json);
+      } catch (e) {
+        console.error("Failed to decode token payload", e);
+        return null;
+      }
+    }
+
+    function renderToken() {
+      const token = getToken();
+      tokenBox.value = token || "";
+
+      const payload = decodePayload(token);
+      payloadBox.textContent = payload
+        ? JSON.stringify(payload, null, 2)
+        : "// no valid token stored";
+    }
+
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      statusEl.textContent = "";
+
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+
+      try {
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          statusEl.textContent = data.error || "Login failed";
+          setToken(null);
+          return;
+        }
+
+        setToken(data.token);
+        statusEl.textContent = `Logged in as ${data.user.username} (role: ${data.user.role})`;
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Network error";
+      }
+    });
+
+    logoutBtn.addEventListener("click", () => {
+      setToken(null);
+      statusEl.textContent = "Logged out";
+    });
+
+    // Initial render
+    renderToken();
+  </script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Session Demo – Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-100 flex items-center justify-center">
+  <main class="w-full max-w-xl bg-white shadow-md rounded-lg p-6 space-y-6">
+    <h1 class="text-2xl font-bold text-center mb-2">Session (Cookies) Demo</h1>
+
+    <!-- Login form -->
+    <section class="space-y-4">
+      <h2 class="font-semibold text-lg">Login</h2>
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1" for="username">Username</label>
+          <input
+            id="username"
+            type="text"
+            class="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-500"
+            placeholder="alice or admin"
+            required
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" for="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            class="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-500"
+            placeholder="alice123 or admin123"
+            required
+          />
+        </div>
+        <div class="flex justify-between space-x-4 mt-4">
+          <button
+            type="submit"
+            class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-1/2"
+          >
+            Login
+          </button>
+
+          <button
+            type="button"
+            id="logoutBtn"
+            class="bg-gray-500 text-white px-3 py-2 rounded hover:bg-gray-600 w-1/2"
+          >
+            Logout
+          </button>
+        </div>
+        </div>
+      </form>
+
+      <p id="status" class="text-sm text-red-600"></p>
+
+      <div class="mt-2 text-sm text-gray-700">
+        <p><strong>Demo users:</strong></p>
+        <ul class="list-disc list-inside">
+          <li>alice / alice123 (role: user)</li>
+          <li>admin / admin123 (role: admin)</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Links to protected pages -->
+    <section class="border-t pt-4 space-y-2">
+      <h2 class="font-semibold text-lg">Protected pages</h2>
+      <p class="text-sm text-gray-700">
+        <a href="/users.html" class="text-blue-600 hover:underline">users.html</a> –
+        accessible for <code>user</code> and <code>admin</code> roles.
+      </p>
+      <p class="text-sm text-gray-700">
+        <a href="/admin.html" class="text-blue-600 hover:underline">admin.html</a> –
+        accessible only for <code>admin</code> role.
+      </p>
+    </section>
+
+    <!-- Session info (similar idea as JWT payload box) -->
+    <section class="border-t pt-4 space-y-3">
+      <h2 class="font-semibold text-lg">Session info</h2>
+      <div>
+        <button
+          id="refreshSessionBtn"
+          class="mb-2 bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm"
+        >
+          Refresh session info
+        </button>
+        <pre
+          id="sessionBox"
+          class="w-full border rounded px-3 py-2 text-xs font-mono bg-gray-50 overflow-x-auto h-32"
+        >// no session loaded</pre>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const statusEl = document.getElementById("status");
+    const sessionBox = document.getElementById("sessionBox");
+
+    async function refreshSessionInfo() {
+      try {
+        const res = await fetch("/api/session");
+        const data = await res.json();
+
+        if (!res.ok) {
+          sessionBox.textContent = `// ${data.error || "No active session"}`;
+          return;
+        }
+
+        sessionBox.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        console.error(err);
+        sessionBox.textContent = "// network error";
+      }
+    }
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      statusEl.textContent = "";
+
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+
+      try {
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          statusEl.textContent = data.error || "Login failed";
+          await refreshSessionInfo();
+          return;
+        }
+
+        statusEl.textContent = `Logged in as ${data.user.username} (role: ${data.user.role})`;
+        await refreshSessionInfo();
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Network error";
+      }
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      try {
+        await fetch("/api/logout", { method: "POST" });
+      } catch (err) {
+        console.error(err);
+      } finally {
+        statusEl.textContent = "Logged out";
+        await refreshSessionInfo();
+      }
+    });
+
+    document.getElementById("refreshSessionBtn").addEventListener("click", refreshSessionInfo);
+
+    // Initial load
+    refreshSessionInfo();
+  </script>
+</body>
+</html>

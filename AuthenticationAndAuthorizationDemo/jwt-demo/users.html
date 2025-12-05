@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>JWT Demo – Users Area</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-100 flex items-center justify-center">
+  <main class="w-full max-w-xl bg-white shadow-md rounded-lg p-6 space-y-4">
+    <h1 class="text-2xl font-bold text-center mb-2">Users Area</h1>
+    <p id="info" class="text-sm text-gray-700"></p>
+
+    <div class="border rounded p-4 bg-gray-50 space-y-2">
+      <h2 class="font-semibold">Protected content</h2>
+      <p class="text-sm text-gray-700">
+        This page is accessible for users with role <code>user</code> or <code>admin</code>.
+      </p>
+      <p class="text-sm">
+        Here you could list normal user content, profile data, etc.
+      </p>
+    </div>
+
+    <div class="flex items-center justify-between pt-4 border-t">
+      <a href="/index.html" class="text-blue-600 hover:underline text-sm">Back to index</a>
+      <button
+        id="logoutBtn"
+        class="bg-gray-500 text-white px-3 py-2 rounded hover:bg-gray-600 text-sm"
+      >
+        Logout
+      </button>
+    </div>
+  </main>
+
+  <script>
+    const TOKEN_KEY = "jwtToken";
+
+    function getToken() {
+      return localStorage.getItem(TOKEN_KEY);
+    }
+
+    function logout() {
+      localStorage.removeItem(TOKEN_KEY);
+      window.location.href = "/index.html";
+    }
+
+    async function checkAccess() {
+      const token = getToken();
+      if (!token) {
+        alert("No token found, please log in first.");
+        window.location.href = "/index.html";
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/check?resource=users", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          alert(data.error || "Access denied");
+          window.location.href = "/index.html";
+          return;
+        }
+
+        const data = await res.json();
+        const payload = data.payload || {};
+        const info = document.getElementById("info");
+        info.textContent = `You are logged in as ${payload.sub} with role ${payload.role}.`;
+      } catch (err) {
+        console.error(err);
+        alert("Network error");
+        window.location.href = "/index.html";
+      }
+    }
+
+    document.getElementById("logoutBtn").addEventListener("click", logout);
+
+    checkAccess();
+  </script>
+</body>
+</html>

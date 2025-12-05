@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Anonymous CSRF Demo – Public Form</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-100 flex items-center justify-center">
+  <main class="w-full max-w-xl bg-white shadow-md rounded-lg p-6 space-y-6">
+    <h1 class="text-2xl font-bold text-center mb-2">Anonymous CSRF-Protected Form</h1>
+
+    <p class="text-sm text-gray-700">
+      This page is <strong>public</strong> (no login required), but the form
+      is protected with a CSRF token using the double-submit cookie pattern.
+    </p>
+
+    <section class="space-y-4">
+      <form id="publicForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1" for="message">Your message</label>
+          <textarea
+            id="message"
+            class="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-500"
+            rows="4"
+            placeholder="Write something..."
+            required
+          ></textarea>
+        </div>
+        <button
+          type="submit"
+          class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          Send
+        </button>
+      </form>
+
+      <p id="status" class="text-sm text-gray-700"></p>
+    </section>
+
+    <section class="border-t pt-4">
+      <a href="/index.html" class="text-blue-600 hover:underline text-sm">
+        Back to main page
+      </a>
+    </section>
+  </main>
+
+  <script>
+    let csrfToken = null;
+    const statusEl = document.getElementById("status");
+
+    async function fetchCsrfToken() {
+      statusEl.textContent = "Initializing CSRF protection…";
+      try {
+        const res = await fetch("/api/csrf-anon");
+        const data = await res.json();
+
+        if (!res.ok) {
+          statusEl.textContent = data.error || "Failed to get CSRF token";
+          return;
+        }
+
+        csrfToken = data.csrfToken;
+        statusEl.textContent = "CSRF token initialized. You can safely submit the form.";
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Network error while getting CSRF token.";
+      }
+    }
+
+    document.getElementById("publicForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      statusEl.textContent = "";
+
+      if (!csrfToken) {
+        statusEl.textContent = "CSRF token not ready. Please reload the page.";
+        return;
+      }
+
+      const message = document.getElementById("message").value.trim();
+      if (!message) {
+        statusEl.textContent = "Message cannot be empty.";
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/public-message", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": csrfToken,
+          },
+          body: JSON.stringify({ message }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          statusEl.textContent = data.error || "Submit failed";
+          return;
+        }
+
+        statusEl.textContent = data.message || "Message sent!";
+        (document.getElementById("message")).value = "";
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Network error while sending message.";
+      }
+    });
+
+    // Initialize CSRF on page load
+    fetchCsrfToken();
+  </script>
+</body>
+</html>
